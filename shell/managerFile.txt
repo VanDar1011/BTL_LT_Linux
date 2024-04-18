@@ -1,0 +1,222 @@
+displayPrompt(){
+echo "Manager File: "
+echo "1) Create Directory "
+echo "2) Change path Directory "
+echo "3) Rename file or directory "
+echo "4) Delete file or directory "
+echo "5) Copy file or directory "
+echo "6) Create file "
+echo "7) Edit file "
+echo "8) Open file "
+echo "9) List "
+echo "10) ListHidden "
+echo "11) Change mode "
+echo "12) Compressed "
+echo "13) Extra "
+echo "q) Exit "
+echo 
+echo "Path now :$PWD"
+echo 
+echo "====	Your choise ?	===="
+}
+createDirectory(){
+#echo "Create Directory"
+echo "Tên thưc mục bạn muốn tạo? "
+read name
+sudo mkdir -p -v $name
+echo "Thư mục được tạo thành công";
+ls -l
+}
+changePathDirectory(){
+#echo "Change path Directory"
+echo "Bạn muốn chuyển tới thư mục ? "
+read newdirectory
+if [[ -d $newdirectory ]]; then
+cd "$newdirectory"
+echo "Chuyển tới thư mục '$newdirectory' thành công"
+else
+    echo "Thư mục '$newdirectory' không tồn tại hoặc không hợp lệ."
+fi
+ls -l
+}
+renameFileOrDirectory(){
+#echo "Rename file or directory"
+echo "Tên thư mục cũ hoặc tên file: "
+read oldname
+echo "Tên thư mục hoặc tên file mới: "
+read newname
+#if [[ -d $oldname ]]; then
+   # mv "$oldname" "$newname" || { echo "Không thể đổi tên thư mục"; exit 1; }
+    #echo "Đã đổi tên thư mục từ '$oldname' thành '$newname'."
+#elif  [[ -f $path ]]; then
+    #mv "$oldname" "$newname" || { echo "Không thể đổi tên tep"; exit 1; }
+   # echo "Đã đổi tên tep từ '$oldname' thành '$newname'."
+#fi
+if [[ -d $oldname || -f $oldname ]]; then
+  mv "$oldname" "$newname" || { echo "Không thể đổi tên thư mục"; exit 1; }
+    echo "Đã đổi tên thư mục hoặc tên file từ '$oldname' thành '$newname'."
+else
+    echo "Thư mục hoặc tên file cũ  '$oldname' không tồn tại hoặc không hợp lệ."
+fi
+}
+deleteFileOrDirectory(){
+#echo "Delete file or directory"
+echo "Tên thư mục hoặc tên file cần xóa: "
+read deletename
+if [[ -d $deletename ]]; then
+   rm -d -r -i -v "$deletename" || { echo "Không thể đổi tên thư mục"; exit 1; }
+    #echo "Đã đổi tên thư mục từ '$oldname' thành '$newname'."
+elif  [[ -f $deletename ]]; then
+    rm -i -v "$deletename" || { echo "Không thể đổi tên tep"; exit 1; }
+   # echo "Đã đổi tên tep từ '$oldname' thành '$newname'."
+else 
+ echo "Thư mục hoặc tên file '$deletename' không tồn tại hoặc không hợp lệ."
+fi
+ls -l
+}
+
+copyFileDir(){
+#echo "Create file"
+echo "Nhập tên file hoặc thư mục muốn copy: "
+read namesource
+echo "Nhâp tên file hoặc thư mục nơi đích: "
+read destination
+cp -r "$namesource" "$destination" && echo "Copy thành công" || echo "Không thành công"
+}
+createFile(){
+#echo "Copy  file"
+echo "Tên file bạn muốn tạo "
+read createfile
+touch $createfile.txt
+echo "Tạo file thành công"
+ls -l
+}
+
+editFile(){
+#echo "Edit file"
+echo "Tên file muốn sửa? "
+read editname
+if [[ -f $editname ]]; then
+nano $editname
+else
+echo "File không tồn tại"
+fi
+ls -l
+}
+openFile(){
+#echo "Openfile"
+echo "Tên file muốn mở? "
+read openname
+if [[ -f $openname ]]; then
+cat $openname
+else
+echo "File không tồn tại"
+fi
+ls -l
+}
+list(){
+read -p "Foldername you want to list :" foldername
+ls -l $foldername
+}
+listHidden(){
+read -p "Foldername you want to list all :" foldername
+ls -la $foldername
+}
+changeMode(){
+read -p "Nhap duong dan toi tap tin: " name
+read -p "Nhap quyen moi: " permissions
+if [ ! -e "$name" ]; then
+echo "Tap tin khong ton tai"
+return 1
+fi
+chmod "$permissions" "$name"
+if [ $? -eq 0 ]; then
+echo "da thay doi quyen truy cap cua $name thanh $permissions"
+else
+echo "Loi khi thay doi quyen"
+return 1
+fi
+ls -l
+}
+compressed(){
+read -p "Nhap duong dan toi den tin can nen: " name
+if [ ! -e "$name" ];then
+echo "Tap tin $name khong ton tai"
+return 1
+fi
+if [ -d "$name" ];then
+local dirName=$(basename "$name")
+tar czf "$dirName.taz.gz" "$name"
+if [ $? -eq 0 ];then
+echo "Da nen thanh cong thuc muc $name thanh $dirName.tar.gz"
+else
+echo "loi khi nen thu muc $name"
+return 1
+fi
+elif [ -f "$name" ];then
+local  fileName=$(basename "$name")
+gzip "$name"
+if [ $? -eq 0 ];then
+echo "Da nen thanh cong tap tin $name thanh $fileName.gz"
+else 
+echo "Loi khi nen tap tin $name"
+return 1
+fi
+else
+echo "Duong dan $name khong hop le"
+return 1
+fi
+ls -l
+}
+extract() {
+    read -p "Nhap duong dan toi tep tin nen (.gz): " archive
+    read -p "Nhap thu muc de giai nen (de trong de giai nen tai thu muc hien tai): " destination
+
+    if [ -z "$destination" ]; then
+        destination="."
+    fi
+
+    if [ ! -f "$archive" ]; then
+        echo "Tep tin nen khong ton tai"
+        return 1
+    fi
+
+    if [ ! -d "$destination" ]; then
+        mkdir -p "$destination"
+    fi
+
+    if [[ "$archive" == *.tar.gz || "$archive" == *.tgz || "$archive" == *.taz.gz ]]; then
+        tar -xzf "$archive" -C "$destination"
+        echo "Da giai nen thanh cong"
+    else
+        echo "Hien tai chi ho tro giai nen tệp tin .tar.gz, .tgz hoac .taz.gz"
+        return 1
+    fi
+}
+
+
+main() {
+    while true; do
+        displayPrompt
+        read -p "Chọn một tùy chọn (1-13): " choice
+        case $choice in
+            1) createDirectory ;;
+            2) changePathDirectory ;;
+            3) renameFileOrDirectory ;;
+            4) deleteFileOrDirectory ;;
+            5) copyFileDir ;;
+	    6) createFile ;;
+	    7) editFile ;;
+	    8) openFile ;;
+	    9) list ;;
+            10) listHidden ;;
+	    11) changeMode ;;
+	    12) compressed ;;
+	    13) extract ;;
+            q) echo "Kết thúc chương trình."; exit ;;
+            *) echo "Vui lòng chọn một tùy chọn hợp lệ (1-13)!" ;;
+        esac
+    done
+}
+
+main

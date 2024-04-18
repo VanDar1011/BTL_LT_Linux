@@ -1,0 +1,8 @@
+#!/bin/bash
+apt-get update
+apt-get -y upgrade
+SSMTP_PATH=/usr/sbin/ssmtp
+CONFIG_FILE=/etc/ssmtp/ssmtp.conf
+# Gửi email báo cáo
+echo -e "Subject:Testlaplich\nĐã cập nhật gói định kì" | $SSMTP_PATH -C $CONFIG_FILE datvu871@gmail.com
+echo "$(date):Done" >> /home/dat/testBTL/file.log

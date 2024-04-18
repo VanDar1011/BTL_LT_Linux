@@ -1,0 +1,88 @@
+#!/bin/bash
+displayPrompt(){
+    echo "Thiết lập thời gian hệ thống" 
+    echo "1)Thời gian hiện tại" 
+    echo "2)Tùy chỉnh giờ" 
+    echo "3)Tùy chỉnh ngày" 
+    echo "4)Cập nhật thời gian theo server" 
+    echo "q)Thoát"
+} 
+returnTime()
+{ 
+current_time=$(date)
+echo "Thời gian hiện tại : '$current_time'."
+}
+setHour()
+{
+if [[ "$(whoami)" != 'root' ]]; then 
+echo "Bận cần quyền root để có thể thực hiện thao tác này."
+exit $E_NOTROOT
+else
+#echo "Xin hãy nhập theo định dạng yyyy/mm/dd"
+read -p "Nhập giờ và phút (HH:MM): " new_time
+if ! [[ $new_time =~ ^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$ ]]; then
+    echo "Định dạng không hợp lệ. Vui lòng nhập theo định dạng HH:MM."
+    exit 1
+fi
+new_hour=$(echo $new_time | cut -d ":" -f 1) 
+#lay phan 1,
+new_minute=$(echo $new_time | cut -d ":" -f 2) 
+#lay phan 2
+sudo date +%T -s "$new_hour:$new_minute:00" #-s dat thoi gian he thong, %t hh:mm:ss
+echo "Giờ và phút của hệ thống đã được cập nhật thành $new_hour giờ $new_minute phút."
+fi
+}
+setDay()
+{
+if [[ "$(whoami)" != 'root' ]]; then 
+echo "Bận cần quyền root để có thể thực hiện thao tác này."
+exit $E_NOTROOT
+else
+#echo "setDay"
+read -p "Nhập ngày (yyyy/mm/dd): " input_date
+if [[ ! $input_date =~ ^[0-9]{4}/[0-9]{2}/[0-9]{2}$ ]]; then
+    echo "Định dạng ngày không hợp lệ. Vui lòng nhập theo định dạng yyyy/mm/dd."
+    exit 1
+fi
+year=$(echo $input_date | cut -d'/' -f1)
+month=$(echo $input_date | cut -d'/' -f2)
+day=$(echo $input_date | cut -d'/' -f3)
+if ! date -d "$year-$month-$day" &>/dev/null; then
+    echo "Ngày không hợp lệ."
+    exit 1
+fi
+sudo date +%Y-%m-%d -s "$year-$month-$day"
+fi
+}
+updateTime()
+{
+if [[ "$(whoami)" != 'root' ]]; then 
+echo "Bận cần quyền root để có thể thực hiện thao tác này."
+exit $E_NOTROOT
+else
+#echo "update"
+echo "Đồng bộ thời gian với máy chủ GOOGLE"
+timedatectl set-timezone 'Asia/Ho_Chi_Minh'
+ntpdate -u time.google.com
+current_time=$(date)
+echo $current_time
+fi
+}
+main()
+{
+  while true; do
+displayPrompt
+read -p "Chọn một tùy chọn (1-4): " choice
+case $choice in
+1) returnTime ;;
+2) setHour ;;
+3) setDay ;;
+4) updateTime ;;
+q) echo "Kết thúc chương trình."; exit ;;
+*) echo "Vui lòng chọn một tùy chọn hợp lệ (1-4)"
+esac
+ done
+}
+
+main
+

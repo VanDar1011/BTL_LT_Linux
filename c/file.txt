@@ -1,0 +1,115 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+// Function prototypes
+void display_menu();
+void list_files();
+void create_file();
+void remove_file();
+void view_file();
+
+int main() {
+    int choice;
+
+    do {
+        display_menu();
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+        getchar(); // Consume newline character \n
+
+        switch (choice) {
+            case 1:
+                list_files();
+                break;
+            case 2:
+                create_file();
+                break;
+            case 3:
+                remove_file();
+                break;
+            case 4:
+                view_file();
+                break;
+            case 5:
+                printf("Exiting program...\n");
+                break;
+            default:
+                printf("Invalid choice. Please try again.\n");
+        }
+    } while (choice != 5);
+
+    return 0;
+}
+
+// Function to display the menu
+void display_menu() {
+    printf("\n===== Menu =====\n");
+    printf("1. List files in current directory (ls)\n");
+    printf("2. Create a new file (create)\n");
+    printf("3. Remove a file (remove)\n");
+    printf("4. View contents of a file (cat)\n");
+    printf("5. Exit\n");
+}
+
+// Function to list files in the current directory
+void list_files() {
+    printf("\nListing files in current directory:\n");
+    system("ls");
+}
+
+// Function to create a new file
+void create_file() {
+    char filename[100];
+    FILE *fp;
+
+    printf("\nEnter the name of the file to create: ");
+    fgets(filename, sizeof(filename), stdin);
+    filename[strcspn(filename, "\n")] = '\0'; // find index \n thay the Remove newline character
+
+    fp = fopen(filename, "w");
+    if (fp == NULL) { // =null la co loi
+        perror("Error creating file");
+    } else {
+        printf("File created successfully: %s\n", filename);
+        fclose(fp);
+    }
+}
+
+// Function to remove a file
+void remove_file() {
+    char filename[100];
+
+    printf("\nEnter the name of the file to remove: ");
+    fgets(filename, sizeof(filename), stdin);
+    filename[strcspn(filename, "\n")] = '\0'; // Remove newline character
+
+    if (remove(filename) == 0) {
+        printf("File removed successfully: %s\n", filename);
+    } else {
+        perror("Error removing file");
+    }
+}
+
+// Function to view contents of a file
+void view_file() {
+    char filename[100];
+    char ch;
+    FILE *fp;
+
+    printf("\nEnter the name of the file to view: ");
+    fgets(filename, sizeof(filename), stdin);
+    filename[strcspn(filename, "\n")] = '\0'; // Remove newline character
+
+    fp = fopen(filename, "r");
+    if (fp == NULL) {
+        perror("Error opening file");
+    } else {
+        printf("Contents of %s:\n", filename);
+        while ((ch = fgetc(fp)) != EOF) { // con tro tu di chuyen sang vi tri tip
+            putchar(ch);
+        }
+        fclose(fp);
+    }
+}

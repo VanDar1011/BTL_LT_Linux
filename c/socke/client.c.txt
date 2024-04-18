@@ -1,0 +1,94 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <pthread.h>
+
+#define PORT 5555
+#define BUFFER_SIZE 1024
+
+void error(const char *msg) {
+    perror(msg);
+    exit(1);
+}
+
+// Hàm xử lý tiểu trình gửi tin nhắn tới server
+void *sendMessage(void *sockfd) {
+    int sock = *((int*)sockfd);
+    char buffer[BUFFER_SIZE];
+
+    while (1) {
+        // Nhập tin nhắn từ người dùng
+        printf("Client: ");
+        fgets(buffer, BUFFER_SIZE - 1, stdin);
+
+        // Gửi tin nhắn tới server
+        int n = send(sock, buffer, strlen(buffer), 0);
+        if (n < 0)
+            error("ERROR writing to socket");
+    }
+
+    return NULL;
+}
+
+// Hàm xử lý tiểu trình nhận tin nhắn từ server
+void *receiveMessage(void *sockfd) {
+    int sock = *((int*)sockfd);
+    char buffer[BUFFER_SIZE];
+    int n;
+
+    while (1) {
+        memset(buffer, 0, BUFFER_SIZE);
+        n = recv(sock, buffer, BUFFER_SIZE - 1, 0);
+        if (n < 0) 
+            error("ERROR reading from socket");
+
+        printf("Server: %s\n", buffer);
+    }
+
+    return NULL;
+}
+
+int main() {
+    int sockfd;
+    struct sockaddr_in serv_addr;
+    char buffer[BUFFER_SIZE];
+
+    // Tạo socket
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) 
+        error("ERROR opening socket");
+
+    // Thiết lập địa chỉ server
+    memset(&serv_addr, 0, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+    //serv_addr.sin_addr.s_addr = inet_addr("128.16.24.247"); // Địa chỉ IP của server
+serv_addr.sin_addr.s_addr = inet_addr("192.168.0.3"); // Địa chỉ IP của server
+
+    // Kết nối tới server
+    if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) 
+        error("ERROR connecting");
+
+    printf("Connected to server\n");
+
+    // Tạo một tiểu trình để gửi tin nhắn tới server
+    pthread_t sendThread;
+    if (pthread_create(&sendThread, NULL, sendMessage, (void*)&sockfd) != 0)
+        error("ERROR creating send thread");
+
+    // Tạo một tiểu trình để nhận tin nhắn từ server
+    pthread_t receiveThread;
+    if (pthread_create(&receiveThread, NULL, receiveMessage, (void*)&sockfd) != 0)
+        error("ERROR creating receive thread");
+
+    // Chờ kết thúc các tiểu trình
+    pthread_join(sendThread, NULL);
+    pthread_join(receiveThread, NULL);
+    close(sockfd);
+    return 0;
+}

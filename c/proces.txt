@@ -1,0 +1,163 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <string.h>
+#include <signal.h>
+// Hàm để hiển thị danh sách tiến trình đang chạy
+void displayRunningProcesses()
+{
+    DIR *proc;
+    struct dirent *entry;
+    char limited_d_name[256];
+    FILE *status_file;
+    char path[256];
+    char line[256];
+    char *name_pos;
+    char process_name[256];
+    // Mở thư mục /proc
+    proc = opendir("/proc");
+    if (proc == NULL)
+    {
+        perror("Error opening /proc directory");
+        return;
+    }
+
+    printf("Danh sách tiến trình đang chạy:\n");
+
+    // Đọc từng entry trong thư mục /proc
+    while ((entry = readdir(proc)) != NULL)
+    {
+        // Kiểm tra xem entry có phải là một thư mục và có tên là một số không
+        if (entry->d_type == DT_DIR && atoi(entry->d_name) != 0)
+        // atoi chuyen ten thanh mot so
+        {
+            strncpy(limited_d_name, entry->d_name, sizeof(limited_d_name) - 1);
+            limited_d_name[sizeof(limited_d_name) - 1] = '\0';
+
+            snprintf(path, sizeof(path), "/proc/%s/status", limited_d_name);
+            // gan duong dan vao path
+            status_file = fopen(path, "r");
+            if (status_file != NULL)
+            {
+                while (fgets(line, sizeof(line), status_file))
+                // doc 1 dong r so snah
+                {
+                    name_pos = strstr(line, "Name:");
+                    if (name_pos != NULL)
+                    {
+                        char *process_name_start = name_pos + 6; // Vị trí bắt đầu của tên tiến trình
+
+                        // Tìm vị trí kết thúc của tên tiến trình bằng cách tìm dấu kết thúc chuỗi
+                        char *process_name_end = strchr(process_name_start, '\n'); // Tìm dấu xuống dòng
+                        if (process_name_end != NULL)
+                        {
+                            // Cắt bỏ ký tự kết thúc dòng (nếu có) để lấy tên của tiến trình
+                            *process_name_end = '\0';
+                        }
+
+                        // Sao chép tên của tiến trình vào biến process_name
+                        strcpy(process_name, process_name_start);
+
+                        // In tên của tiến trình và PID
+                        printf("%s (Pid: %s)\n", process_name, limited_d_name);
+                        break;
+                    }
+                }
+                fclose(status_file);
+            }
+        }
+    }
+
+    closedir(proc);
+}
+
+// Hàm để kill một tiến trình
+void killProcess(pid_t pid)
+{
+    int status;
+
+    // Sử dụng hàm kill để gửi tín hiệu SIGKILL đến tiến trình
+    status = kill(pid, SIGKILL);
+
+    if (status == 0)
+    {
+        printf("Tiến trình với PID %d đã bị kill.\n", pid);
+    }
+    else
+    {
+        perror("Error killing process");
+    }
+}
+volatile sig_atomic_t flag = 0;
+void handle_sigint(int sig)
+{
+    flag = 1;
+}
+void createProcess()
+{
+
+    pid_t child_pid;
+    child_pid = fork(); // Create a new child process;
+    if (child_pid < 0)
+    {
+        printf("fork failed");
+    }
+     else if (child_pid == 0)
+    {
+       printf("child process successfully created!");
+       printf("child_PID = %d,parent_PID = %d", getpid(), getppid());
+    }
+    else
+    {
+        printf("parent process successfully created!");
+        printf("child_PID = %d, parent_PID = %d", getpid(), getppid());
+        while (!flag)
+        {
+        }
+    }
+   
+}
+
+int main()
+{
+    int choice;
+    pid_t pid;
+    signal(9, handle_sigint);
+
+    do
+    {
+        // Hiển thị menu
+        printf("\n-- MENU --\n");
+        printf("1. Hiển thị danh sách tiến trình đang chạy\n");
+        printf("2. Kill một tiến trình\n");
+        printf("3. Tạo một tiến trình \n");
+        printf("4. Thoát\n");
+        printf("Nhập lựa chọn của bạn: ");
+        scanf("%d", &choice);
+        getchar();
+        switch (choice)
+        {
+        case 1:
+            displayRunningProcesses();
+            break;
+        case 2:
+            printf("Nhập PID của tiến trình cần kill: ");
+            scanf("%d", &pid);
+            killProcess(pid);
+            break;
+        case 3:
+            createProcess();
+	    break;
+        case 4:
+            printf("Thoát khỏi chương trình.\n");
+            break;
+        default:
+            printf("Lựa chọn không hợp lệ.\n");
+            break;
+        }
+    } while (choice != 3);
+
+    return 0;
+}

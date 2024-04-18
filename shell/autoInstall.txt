@@ -1,0 +1,55 @@
+#!/bin/bash
+displayPrompt(){
+echo "Tự động cài đặt/ gỡ bỏ chương trình"
+echo "1) install"
+echo "2) uninstall"
+echo "3) checkPack"
+echo "q) thoat "
+}
+installPackFromFile(){
+	if [[ "$(whoami)" != "root" ]]; then
+	echo "Phai co quyen root"
+	exit $E_NOTROOT
+	fi
+    # Đọc danh sách gói từ tệp tin
+    while IFS= read -r installName; do
+        sudo apt-get -y install "$installName" && echo "Đã cài đặt gói $installName thành công" || echo "Không thể cài đặt gói $installName"
+    done < "$1"
+}
+uninstallPackFromFile(){
+	if [[ "$(whoami)" != "root" ]]; then
+	echo "Phai co quyen root"
+	exit $E_NOTROOT
+	fi
+    # Đọc danh sách gói từ tệp tin
+    while IFS= read -r installName; do
+        sudo apt-get -y purge "$installName" && sudo apt-get -y autoremove && echo "Đã gỡ bỏ gói $installName thành công" || echo "Không thể gỡ bỏ gói $installName"
+    done < "$1"
+}
+checkPack(){
+#check htop pack
+read -p "Nhap len goi muon check " name
+if dpkg -l | grep -q $name; then
+    echo "Gói $name đã được cài đặt."
+else
+    echo "Gói $name không được cài đặt."
+fi
+}
+main(){
+    while true; do
+        displayPrompt
+        read -p "Chọn một tùy chọn (1-3): " choice
+        case $choice in
+            1) 
+                read -p "Nhập tên tệp tin chứa danh sách gói cần cài đặt: " filename
+                installPackFromFile "$filename" ;;
+            2) 
+ 		read -p "Nhập tên tệp tin chứa danh sách gói cần gỡ bỏ: " filename
+                uninstallPackFromFile "$filename" ;;
+            3) checkPack ;;
+            q) echo "Kết thúc chương trình."; exit ;;
+            *) echo "Vui lòng chọn một tùy chọn hợp lệ (1-3)!" ;;
+        esac
+    done
+}
+main

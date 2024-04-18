@@ -1,0 +1,1 @@
+thay ip trong client = ip máy thật(win),client là máy ubuntu

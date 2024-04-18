@@ -1,0 +1,2 @@
+phan autoInstall thì tạo thêm một file package với nội dung như này( đó là các gói cần cài)
+lập lịch tác vụ thì thôi để tôi trả lời, vì còn phải cài nhiều thứ
